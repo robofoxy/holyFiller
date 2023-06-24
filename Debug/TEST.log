@@ -1,0 +1,32 @@
+﻿  holeFill.cpp
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(7,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(177,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(184,9): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(196,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(221,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(237,9): warning C4018: '>=': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(262,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(264,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(300,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(302,22): warning C4018: '<': signed/unsigned mismatch
+  main.cpp
+C:\Users\rasit\Desktop\holyFiller\main.cpp(38,10): warning C4473: 'scanf_s' : not enough arguments passed for format string
+C:\Users\rasit\Desktop\holyFiller\main.cpp(38,10): message : placeholders and their parameters expect 2 variadic arguments, but 1 were provided
+C:\Users\rasit\Desktop\holyFiller\main.cpp(38,10): message : the missing variadic argument 2 is required by format string '%c'
+C:\Users\rasit\Desktop\holyFiller\main.cpp(38,10): message : this argument is used as a buffer size
+  Mesh.cpp
+C:\Users\rasit\Desktop\holyFiller\Mesh.cpp(5,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\Mesh.cpp(8,33): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\rasit\Desktop\holyFiller\Mesh.cpp(9,33): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\rasit\Desktop\holyFiller\Mesh.cpp(10,33): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\rasit\Desktop\holyFiller\Mesh.cpp(17,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\Mesh.cpp(158,20): warning C4018: '<': signed/unsigned mismatch
+  Painter.cpp
+C:\Users\rasit\Desktop\holyFiller\Painter.cpp(13,42): warning C4305: 'argument': truncation from 'double' to 'const float'
+C:\Users\rasit\Desktop\holyFiller\Painter.cpp(24,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\Painter.cpp(32,27): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\rasit\Desktop\holyFiller\Painter.cpp(44,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\Painter.cpp(47,20): warning C4018: '<': signed/unsigned mismatch
+  Generating Code...
+  LINK : program database C:\Users\rasit\Desktop\holyFiller\Debug\TEST.pdb missing; performing full link
+  TEST.vcxproj -> C:\Users\rasit\Desktop\holyFiller\Debug\TEST.exe

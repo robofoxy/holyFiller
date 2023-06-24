@@ -1,0 +1,3 @@
+C:\Users\rasit\source\repos\TEST\Debug\TEST.exe
+C:\Users\rasit\Documents\TEST\Debug\TEST.exe
+C:\Users\rasit\Desktop\holyFiller\Debug\TEST.exe
