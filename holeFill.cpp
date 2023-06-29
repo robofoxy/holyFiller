@@ -1,34 +1,93 @@
 #include "Mesh.h"
 
+struct edge {
+	int X;
+	int Y;
+
+	edge() : X(0), Y(0) {};
+	edge(const int& x, const int& y) : X(x), Y(y) {};
+	edge(const edge& other) {
+		X = other.X;
+		Y = other.Y;
+	};
+
+	edge& operator=(const edge& other) {
+		X = other.X;
+		Y = other.Y;
+		return *this;
+	};
+
+	bool operator==(const edge& other) const {
+		if (X == other.X && Y == other.Y)
+			return true;
+		return false;
+	};
+
+	bool operator<(const edge& other) {
+		if (X < other.X)
+			return true;
+		else if (X == other.X && Y == other.Y)
+			return true;
+
+		return false;
+	};
+
+	// this could be moved in to std::hash<edge>::operator()
+	size_t operator()(const edge& pointToHash) const noexcept {
+		size_t hash = pointToHash.X + 10 * pointToHash.Y;
+		return hash;
+	};
+
+};
+
+namespace std {
+	template<> struct hash<edge>
+	{
+		std::size_t operator()(const edge& p) const noexcept
+		{
+			return p(p);
+		}
+	};
+}
+
+
 void boundaryLoopDetector(const vector<Triangle*>& tris, vector<vector<int>>& boundaryLoops)
 {
-	set<pair<int, int>> edges;
+	unordered_set<edge> edges;
 
 	for (int i = 0; i < tris.size(); i++)
 	{
-		set<pair<int, int>>::iterator aEd = edges.find(make_pair(tris[i]->v2i, tris[i]->v1i));
+		edge ed { tris[i]->v2i, tris[i]->v1i };
+		unordered_set<edge>::iterator aEd = edges.find(ed);
 		
 		if (aEd == edges.end())
 		{
-			edges.insert(make_pair(tris[i]->v1i, tris[i]->v2i));
+			edge e{ tris[i]->v1i, tris[i]->v2i };
+			edges.insert(e);
 		}
 		else
 		{
 			edges.erase(aEd);
 		}
 
-		if((aEd = edges.find(make_pair(tris[i]->v3i, tris[i]->v2i))) == edges.end())
+		edge ed1{ tris[i]->v3i, tris[i]->v2i };
+
+		if((aEd = edges.find(ed1)) == edges.end())
 		{
-			edges.insert(make_pair(tris[i]->v2i, tris[i]->v3i));
+			edge e{ tris[i]->v2i, tris[i]->v3i };
+			edges.insert(e);
 		}
 		else
 		{
 			edges.erase(aEd);
 		}
 
-		if((aEd = edges.find(make_pair(tris[i]->v1i, tris[i]->v3i))) == edges.end())
+		edge ed2{ tris[i]->v1i, tris[i]->v3i };
+
+		if((aEd = edges.find(ed2)) == edges.end())
 		{
-			edges.insert(make_pair(tris[i]->v3i, tris[i]->v1i));
+			edge e{ tris[i]->v3i, tris[i]->v1i };
+			edges.insert(e);
 		}
 		else
 		{
@@ -37,9 +96,9 @@ void boundaryLoopDetector(const vector<Triangle*>& tris, vector<vector<int>>& bo
 	}
 	unordered_map<int, int> boundary;
 
-	for (pair<int, int> edge: edges)
+	for (unordered_set<edge>::iterator ed = edges.begin(); ed != edges.end(); ed++)
 	{
-		boundary[edge.first] = edge.second;
+		boundary[(*ed).X] = (*ed).Y;
 	}
 
 	vector<int> boundaryLoop(boundary.size(), 0);
