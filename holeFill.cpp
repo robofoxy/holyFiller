@@ -1,5 +1,7 @@
 #include "Mesh.h"
 
+#define ALPHA 0.5
+
 struct edge {
 	int X;
 	int Y;
@@ -138,11 +140,13 @@ void boundaryLoopDetector(const vector<Triangle*>& tris, vector<vector<int>>& bo
 	}
 }
 
-void insertTriangles(Mesh* mesh, const vector<int>& boundaryLoop, const vector<vector<int>>& lambdas, vector<int>& filled)
+vector<Eigen::Vector3i> trianglesToBeInserted(Mesh* mesh, const vector<int>& boundaryLoop, const vector<vector<int>>& lambdas, vector<int>& filled, vector<Eigen::Vector3d>& centroids)
 {
 	vector<pair<int, int>> sections;
 
 	sections.push_back(pair<int, int>{ 0, boundaryLoop.size() - 1 });
+
+	vector<Eigen::Vector3i> to_be;
 
 	while (sections.size() > 0)
 	{
@@ -162,7 +166,16 @@ void insertTriangles(Mesh* mesh, const vector<int>& boundaryLoop, const vector<v
 		filled.push_back(boundaryLoop[section.first]);
 		filled.push_back(boundaryLoop[k]);
 		filled.push_back(boundaryLoop[section.second]);
-		mesh->tris.push_back(new Triangle(mesh->tris.size(), boundaryLoop[section.first], boundaryLoop[k], boundaryLoop[section.second]));
+
+		Eigen::Vector3i tr(boundaryLoop[section.first], boundaryLoop[k], boundaryLoop[section.second]);
+
+		to_be.push_back(tr);
+
+		Eigen::Vector3d vc;
+		vc << (mesh->verts[boundaryLoop[section.first]]->coords[0] + mesh->verts[boundaryLoop[k]]->coords[0] + mesh->verts[boundaryLoop[section.second]]->coords[0]) / 3.0,
+			(mesh->verts[boundaryLoop[section.first]]->coords[1] + mesh->verts[boundaryLoop[k]]->coords[1] + mesh->verts[boundaryLoop[section.second]]->coords[1]) / 3.0,
+			(mesh->verts[boundaryLoop[section.first]]->coords[2] + mesh->verts[boundaryLoop[k]]->coords[2] + mesh->verts[boundaryLoop[section.second]]->coords[2]) / 3.0;
+		centroids.push_back(vc);
 
 		if (k - section.first > 1)
 		{
@@ -174,6 +187,60 @@ void insertTriangles(Mesh* mesh, const vector<int>& boundaryLoop, const vector<v
 			sections.push_back(pair<int, int>{ k, section.second });
 		}
 	}
+
+	return to_be;
+}
+
+
+int insertTriangles(Mesh* mesh, const vector<int>& boundaryLoop, const vector<vector<int>>& lambdas, vector<int>& filled, vector<Eigen::Vector3d>& centroids)
+{
+	vector<pair<int, int>> sections;
+
+	sections.push_back(pair<int, int>{ 0, boundaryLoop.size() - 1 });
+
+	int patchingTriangleIndex = -1;
+
+	while (sections.size() > 0)
+	{
+		pair<int, int> section = sections.back();
+		sections.pop_back();
+		int k;
+
+		if (section.second - section.first == 2)
+		{
+			k = section.first + 1;
+		}
+		else
+		{
+			k = lambdas[section.second - section.first - 1][section.first];
+		}
+
+		filled.push_back(boundaryLoop[section.first]);
+		filled.push_back(boundaryLoop[k]);
+		filled.push_back(boundaryLoop[section.second]);
+		
+		if (patchingTriangleIndex == -1) patchingTriangleIndex = mesh->tris.size();
+
+		mesh->addTriangle(boundaryLoop[section.first], boundaryLoop[k], boundaryLoop[section.second]);
+		
+		Eigen::Vector3d vc;
+		vc << (mesh->verts[boundaryLoop[section.first]]->coords[0] + mesh->verts[boundaryLoop[k]]->coords[0] + mesh->verts[boundaryLoop[section.second]]->coords[0]) / 3.0,
+			(mesh->verts[boundaryLoop[section.first]]->coords[1] + mesh->verts[boundaryLoop[k]]->coords[1] + mesh->verts[boundaryLoop[section.second]]->coords[1]) / 3.0,
+			(mesh->verts[boundaryLoop[section.first]]->coords[2] + mesh->verts[boundaryLoop[k]]->coords[2] + mesh->verts[boundaryLoop[section.second]]->coords[2]) / 3.0;
+		centroids.push_back(vc);
+
+		if (k - section.first > 1)
+		{
+			sections.push_back(pair<int, int>{ section.first, k });
+		}
+
+		if (section.second - k > 1)
+		{
+			sections.push_back(pair<int, int>{ k, section.second });
+		}
+	}
+
+	return patchingTriangleIndex;
 }
 
 vector<int> findOrigins(vector<int> face, int size) {
@@ -283,6 +350,106 @@ void findEdgeTriangleNormals(Mesh* mesh, vector<vector<Eigen::Vector3d>>& edgeTr
 	}
 }
 
+void fetchCentroidSigmas(Mesh* mesh, vector<Eigen::Vector3i> triangles, vector<float>& centroidSigmas, unordered_map<int,float> sigmas)
+{
+	for (int i = 0; i < triangles.size(); i++)
+	{
+		int v1 = triangles[i](0);
+		int v2 = triangles[i](1);
+		int v3 = triangles[i](2);
+
+		centroidSigmas.push_back((sigmas[v1] + sigmas[v2] + sigmas[v3]) / 3.0);
+	}
+}
+
+void calculateSigmas(Mesh* mesh, const vector<int>& boundaryLoop, unordered_map<int, float>& sigmas)
+{
+	for (int i = 0; i < boundaryLoop.size(); i++)
+	{
+		sigmas[boundaryLoop[i]] = 0;
+
+		for (int j = 0; j < mesh->verts[boundaryLoop[i]]->vertList.size(); j++)
+		{
+			float* adjc = mesh->verts[mesh->verts[boundaryLoop[i]]->vertList[j]]->coords;
+			float* vc = mesh->verts[boundaryLoop[i]]->coords;
+
+			sigmas[boundaryLoop[i]] += sqrt(pow(vc[0] - adjc[0], 2) + pow(vc[1] - adjc[1], 2) + pow(vc[2] - adjc[2], 2));
+		}
+
+		sigmas[boundaryLoop[i]] /= mesh->verts[boundaryLoop[i]]->vertList.size();
+	}
+}
+
+void identifyDividedTriangles(Mesh* mesh, vector<Eigen::Vector3i> triangles,  vector<Eigen::Vector3d> centroids, unordered_map<int, float>sigmas, vector<float> centroidSigmas, vector<int>& trianglesToBeDivided)
+{
+	for (int i = 0; i < triangles.size(); i++)
+	{
+		float sigma_vc = centroidSigmas[i];
+		Eigen::Vector3d vc = centroids[i];
+
+		for (int m = 0; m < 3; m++)
+		{
+			Eigen::Vector3d vm;
+			vm << mesh->verts[triangles[i][m]]->coords[0], mesh->verts[triangles[i][m]]->coords[1], mesh->verts[triangles[i][m]]->coords[2];
+			float sigma_vm = sigmas[triangles[i][m]];
+
+			if (ALPHA * (vc - vm).norm() > sigma_vc && ALPHA * (vc - vm).norm() > sigma_vm)
+			{
+				trianglesToBeDivided.push_back(i);
+				break;
+			}
+		}
+	}
+}
+
+void divideTriangles(Mesh* mesh, vector<Eigen::Vector3i>& triangles, const vector<int>& trianglesToBeDivided, vector<Eigen::Vector3d>& centroids, unordered_map<int, float>& sigmas, vector<float>& centroidSigmas)
+{
+	for (int i = 0; i < trianglesToBeDivided.size(); i++)
+	{
+		float* coords = (float*)malloc(sizeof(float) * 3);
+		coords[0] = centroids[trianglesToBeDivided[i]](0);
+		coords[1] = centroids[trianglesToBeDivided[i]](1);
+		coords[2] = centroids[trianglesToBeDivided[i]](2);
+		
+		Vertex* centroid = new Vertex(mesh->verts.size(), coords);
+		mesh->verts.push_back(centroid);
+
+		Eigen::Vector3i tr1;
+		tr1 << mesh->verts.size() - 1, triangles[trianglesToBeDivided[i]](1), triangles[trianglesToBeDivided[i]](2);
+		Eigen::Vector3i tr2;
+		tr2 << triangles[trianglesToBeDivided[i]](0), mesh->verts.size() - 1, triangles[trianglesToBeDivided[i]](2);
+		Eigen::Vector3i tr3;
+		tr3 << triangles[trianglesToBeDivided[i]](0), triangles[trianglesToBeDivided[i]](1), mesh->verts.size() - 1;
+		triangles[trianglesToBeDivided[i]] = tr1;
+		triangles.push_back(tr2);
+		triangles.push_back(tr3);
+
+		sigmas[mesh->verts.size() - 1] = centroidSigmas[trianglesToBeDivided[i]];
+
+		//calculate centroids & centroidsigmas
+		Eigen::Vector3d c1;
+		c1 << (mesh->verts[tr1(0)]->coords[0] + mesh->verts[tr1(1)]->coords[0] + mesh->verts[tr1(2)]->coords[0]) / 3.0,
+			(mesh->verts[tr1(0)]->coords[1] + mesh->verts[tr1(1)]->coords[1] + mesh->verts[tr1(2)]->coords[1]) / 3.0,
+			(mesh->verts[tr1(0)]->coords[2] + mesh->verts[tr1(1)]->coords[2] + mesh->verts[tr1(2)]->coords[2]) / 3.0;
+		Eigen::Vector3d c2;
+		c2 << (mesh->verts[tr2(0)]->coords[0] + mesh->verts[tr2(1)]->coords[0] + mesh->verts[tr2(2)]->coords[0]) / 3.0,
+			(mesh->verts[tr2(0)]->coords[1] + mesh->verts[tr2(1)]->coords[1] + mesh->verts[tr2(2)]->coords[1]) / 3.0,
+			(mesh->verts[tr2(0)]->coords[2] + mesh->verts[tr2(1)]->coords[2] + mesh->verts[tr2(2)]->coords[2]) / 3.0;
+		Eigen::Vector3d c3;
+		c3 << (mesh->verts[tr3(0)]->coords[0] + mesh->verts[tr3(1)]->coords[0] + mesh->verts[tr3(2)]->coords[0]) / 3.0,
+			(mesh->verts[tr3(0)]->coords[1] + mesh->verts[tr3(1)]->coords[1] + mesh->verts[tr3(2)]->coords[1]) / 3.0,
+			(mesh->verts[tr3(0)]->coords[2] + mesh->verts[tr3(1)]->coords[2] + mesh->verts[tr3(2)]->coords[2]) / 3.0;
+
+		centroidSigmas[trianglesToBeDivided[i]] = (sigmas[tr1(0)] + sigmas[tr1(1)] + sigmas[tr1(2)]) / 3.0;
+		centroidSigmas.push_back((sigmas[tr2(0)] + sigmas[tr2(1)] + sigmas[tr2(2)]) / 3.0);
+		centroidSigmas.push_back((sigmas[tr3(0)] + sigmas[tr3(1)] + sigmas[tr3(2)]) / 3.0);
+
+		centroids[trianglesToBeDivided[i]] = c1;
+		centroids.push_back(c2);
+		centroids.push_back(c3);
+	}
+}
+
 void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<int>& filled, enum METHOD method)
 {
 	vector<vector<double>> A;
@@ -380,9 +547,25 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<int>& 
 		}
 	}
 
-	insertTriangles(mesh, boundaryLoop, ls, filled);
-}
 
+	// REFINEMENT
+	// NEEDS REFACTORING & ENCAPSULATION IN A FUNCTION FOR MODULARITY AND READABILITY
+	unordered_map<int,float> sigmas;
+	calculateSigmas(mesh, boundaryLoop, sigmas);
+
+	vector<Eigen::Vector3d> centroids;
+	vector<Eigen::Vector3i> triangles = trianglesToBeInserted(mesh, boundaryLoop, ls, filled, centroids);
+
+	vector<float> centroidSigmas;
+
+	fetchCentroidSigmas(mesh, triangles, centroidSigmas, sigmas);
+
+	vector<int> trianglesToBeDivided;
+	identifyDividedTriangles(mesh, triangles, centroids, sigmas, centroidSigmas, trianglesToBeDivided);
+
+	divideTriangles(mesh, triangles, trianglesToBeDivided, centroids, sigmas, centroidSigmas);
+
+}
 
 vector<int> holyFiller(Mesh* mesh, enum METHOD method)
 {
@@ -393,6 +576,7 @@ vector<int> holyFiller(Mesh* mesh, enum METHOD method)
 	for (auto boundaryLoop : boundaryLoops)
 	{
 		holyFillerHelper(mesh, boundaryLoop, filled, method);
+		
 	}
 
 	return filled;
