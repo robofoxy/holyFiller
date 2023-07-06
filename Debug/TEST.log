@@ -1,14 +1,43 @@
-﻿  Painter.cpp
-C:\Users\rasit\Desktop\holyFiller\Painter.cpp(13,42): warning C4305: 'argument': truncation from 'double' to 'const float'
-C:\Users\rasit\Desktop\holyFiller\Painter.cpp(24,20): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rasit\Desktop\holyFiller\Painter.cpp(34,27): warning C4305: 'argument': truncation from 'double' to 'float'
-C:\Users\rasit\Desktop\holyFiller\Painter.cpp(45,42): warning C4305: 'argument': truncation from 'double' to 'const float'
-C:\Users\rasit\Desktop\holyFiller\Painter.cpp(74,20): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rasit\Desktop\holyFiller\Painter.cpp(77,20): warning C4018: '<': signed/unsigned mismatch
-  main.cpp
-C:\Users\rasit\Desktop\holyFiller\main.cpp(43,10): warning C4473: 'scanf_s' : not enough arguments passed for format string
-C:\Users\rasit\Desktop\holyFiller\main.cpp(43,10): message : placeholders and their parameters expect 2 variadic arguments, but 1 were provided
-C:\Users\rasit\Desktop\holyFiller\main.cpp(43,10): message : the missing variadic argument 2 is required by format string '%c'
-C:\Users\rasit\Desktop\holyFiller\main.cpp(43,10): message : this argument is used as a buffer size
-  Generating Code...
+﻿  holeFill.cpp
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(60,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(193,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(256,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(263,9): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(275,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(300,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(308,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(314,67): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(320,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(324,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(329,35): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(338,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(360,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(363,49): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(364,49): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(365,49): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(396,96): warning C4244: '=': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(397,79): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(398,79): warning C4244: 'argument': conversion from 'double' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=float
+          ]
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(411,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(495,9): warning C4018: '>=': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(520,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(522,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(558,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(560,22): warning C4018: '<': signed/unsigned mismatch
   TEST.vcxproj -> C:\Users\rasit\Desktop\holyFiller\Debug\TEST.exe

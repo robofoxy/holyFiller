@@ -403,6 +403,85 @@ void divideTriangles(Mesh* mesh, vector<Eigen::Vector3i>& triangles, const vecto
 	}
 }
 
+// REFACTORING NEEDED
+void relax(Mesh* mesh, vector<Eigen::Vector3i>& triangles)
+{
+	unordered_map<edge, int> edgesToTriangles;
+
+	for (int i = 0; i < triangles.size(); i++)
+	{
+		edge e1{ triangles[i](0),  triangles[i](1) };
+		edge e2{ triangles[i](1),  triangles[i](2) };
+		edge e3{ triangles[i](2),  triangles[i](0) };
+		int a, b;
+
+		// REFACTORING NEEDED
+		if ((a = edgesToTriangles.count({ triangles[i](0),  triangles[i](1) })) == 0 && (b = edgesToTriangles.count({ triangles[i](1),  triangles[i](0) })) == 0)
+		{
+			edgesToTriangles[{ triangles[i](0), triangles[i](1) }] = i;
+		}
+		else
+		{
+			// REFACTORING NEEDED
+			int neighbor;
+			if (a > 0)
+			{
+				neighbor = edgesToTriangles[{ triangles[i](0), triangles[i](1) }];
+			}
+			else
+			{
+				neighbor = edgesToTriangles[{ triangles[i](1), triangles[i](0) }];
+			}
+			// REFACTORING NEEDED
+			;
+		}
+
+		// REFACTORING NEEDED
+		if ((a = edgesToTriangles.count({ triangles[i](1),  triangles[i](2) })) == 0 && (b = edgesToTriangles.count({ triangles[i](2),  triangles[i](1) })) == 0)
+		{
+			edgesToTriangles[{ triangles[i](1), triangles[i](2) }] = i;
+		}
+		else
+		{
+			// REFACTORING NEEDED
+			int neighbor;
+			if (a > 0)
+			{
+				neighbor = edgesToTriangles[{ triangles[i](1), triangles[i](2) }];
+			}
+			else
+			{
+				neighbor = edgesToTriangles[{ triangles[i](2), triangles[i](1) }];
+			}
+			// REFACTORING NEEDED
+			;
+		}
+
+		// REFACTORING NEEDED
+		if ((a = edgesToTriangles.count({ triangles[i](2),  triangles[i](0) })) == 0 && (b = edgesToTriangles.count({ triangles[i](0),  triangles[i](2) })) == 0)
+		{
+			edgesToTriangles[{ triangles[i](2), triangles[i](0) }] = i;
+		}
+		else
+		{
+			// REFACTORING NEEDED
+			int neighbor;
+			if (a > 0)
+			{
+				neighbor = edgesToTriangles[{ triangles[i](2), triangles[i](0) }];
+			}
+			else
+			{
+				neighbor = edgesToTriangles[{ triangles[i](0), triangles[i](2) }];
+			}
+			// REFACTORING NEEDED
+			;
+		}
+
+
+	}
+}
+
 void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& triangles, enum METHOD method)
 {
 	vector<vector<double>> A;
@@ -500,7 +579,6 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen:
 		}
 	}
 
-
 	// REFINEMENT
 	// NEEDS REFACTORING & ENCAPSULATION IN A FUNCTION FOR MODULARITY AND READABILITY
 	unordered_map<int,float> sigmas;
@@ -508,16 +586,24 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen:
 
 	vector<Eigen::Vector3d> centroids;
 	triangles = trianglesToBeInserted(mesh, boundaryLoop, ls, centroids);
-
 	vector<float> centroidSigmas;
-
 	fetchCentroidSigmas(mesh, triangles, centroidSigmas, sigmas);
 
-	vector<int> trianglesToBeDivided;
-	identifyDividedTriangles(mesh, triangles, centroids, sigmas, centroidSigmas, trianglesToBeDivided);
+	int k = 0;
+	while (k < 3)
+	{
+		vector<int> trianglesToBeDivided;
+		identifyDividedTriangles(mesh, triangles, centroids, sigmas, centroidSigmas, trianglesToBeDivided);
+		if (trianglesToBeDivided.empty()) break;
+		divideTriangles(mesh, triangles, trianglesToBeDivided, centroids, sigmas, centroidSigmas);
 
-	divideTriangles(mesh, triangles, trianglesToBeDivided, centroids, sigmas, centroidSigmas);
+		/*RELAXATION*/
 
+		relax(mesh, triangles);
+
+		/*RELAXATION*/
+		k++;
+	}
 
 	insertTriangles(mesh, triangles);
 }
