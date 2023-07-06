@@ -140,7 +140,7 @@ void boundaryLoopDetector(const vector<Triangle*>& tris, vector<vector<int>>& bo
 	}
 }
 
-vector<Eigen::Vector3i> trianglesToBeInserted(Mesh* mesh, const vector<int>& boundaryLoop, const vector<vector<int>>& lambdas, vector<int>& filled, vector<Eigen::Vector3d>& centroids)
+vector<Eigen::Vector3i> trianglesToBeInserted(Mesh* mesh, const vector<int>& boundaryLoop, const vector<vector<int>>& lambdas, vector<Eigen::Vector3d>& centroids)
 {
 	vector<pair<int, int>> sections;
 
@@ -162,10 +162,6 @@ vector<Eigen::Vector3i> trianglesToBeInserted(Mesh* mesh, const vector<int>& bou
 		{
 			k = lambdas[section.second - section.first - 1][section.first];
 		}
-
-		filled.push_back(boundaryLoop[section.first]);
-		filled.push_back(boundaryLoop[k]);
-		filled.push_back(boundaryLoop[section.second]);
 
 		Eigen::Vector3i tr(boundaryLoop[section.first], boundaryLoop[k], boundaryLoop[section.second]);
 
@@ -192,55 +188,12 @@ vector<Eigen::Vector3i> trianglesToBeInserted(Mesh* mesh, const vector<int>& bou
 }
 
 
-int insertTriangles(Mesh* mesh, const vector<int>& boundaryLoop, const vector<vector<int>>& lambdas, vector<int>& filled, vector<Eigen::Vector3d>& centroids)
+void insertTriangles(Mesh* mesh, const vector<Eigen::Vector3i>& triangles)
 {
-	vector<pair<int, int>> sections;
-
-	sections.push_back(pair<int, int>{ 0, boundaryLoop.size() - 1 });
-
-	int patchingTriangleIndex = -1;
-
-	while (sections.size() > 0)
+	for (int i = 0; i < triangles.size(); i++)
 	{
-		pair<int, int> section = sections.back();
-		sections.pop_back();
-		int k;
-
-		if (section.second - section.first == 2)
-		{
-			k = section.first + 1;
-		}
-		else
-		{
-			k = lambdas[section.second - section.first - 1][section.first];
-		}
-
-		filled.push_back(boundaryLoop[section.first]);
-		filled.push_back(boundaryLoop[k]);
-		filled.push_back(boundaryLoop[section.second]);
-		
-		if (patchingTriangleIndex == -1) patchingTriangleIndex = mesh->tris.size();
-
-		mesh->addTriangle(boundaryLoop[section.first], boundaryLoop[k], boundaryLoop[section.second]);
-		
-		Eigen::Vector3d vc;
-		vc << (mesh->verts[boundaryLoop[section.first]]->coords[0] + mesh->verts[boundaryLoop[k]]->coords[0] + mesh->verts[boundaryLoop[section.second]]->coords[0]) / 3.0,
-			(mesh->verts[boundaryLoop[section.first]]->coords[1] + mesh->verts[boundaryLoop[k]]->coords[1] + mesh->verts[boundaryLoop[section.second]]->coords[1]) / 3.0,
-			(mesh->verts[boundaryLoop[section.first]]->coords[2] + mesh->verts[boundaryLoop[k]]->coords[2] + mesh->verts[boundaryLoop[section.second]]->coords[2]) / 3.0;
-		centroids.push_back(vc);
-
-		if (k - section.first > 1)
-		{
-			sections.push_back(pair<int, int>{ section.first, k });
-		}
-
-		if (section.second - k > 1)
-		{
-			sections.push_back(pair<int, int>{ k, section.second });
-		}
+		mesh->addTriangle(triangles[i](0), triangles[i](1), triangles[i](2));
 	}
-
-	return patchingTriangleIndex;
 }
 
 vector<int> findOrigins(vector<int> face, int size) {
@@ -450,7 +403,7 @@ void divideTriangles(Mesh* mesh, vector<Eigen::Vector3i>& triangles, const vecto
 	}
 }
 
-void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<int>& filled, enum METHOD method)
+void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& triangles, enum METHOD method)
 {
 	vector<vector<double>> A;
 	vector<vector<int>> ls;
@@ -554,7 +507,7 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<int>& 
 	calculateSigmas(mesh, boundaryLoop, sigmas);
 
 	vector<Eigen::Vector3d> centroids;
-	vector<Eigen::Vector3i> triangles = trianglesToBeInserted(mesh, boundaryLoop, ls, filled, centroids);
+	triangles = trianglesToBeInserted(mesh, boundaryLoop, ls, centroids);
 
 	vector<float> centroidSigmas;
 
@@ -565,18 +518,18 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<int>& 
 
 	divideTriangles(mesh, triangles, trianglesToBeDivided, centroids, sigmas, centroidSigmas);
 
+
+	insertTriangles(mesh, triangles);
 }
 
-vector<int> holyFiller(Mesh* mesh, enum METHOD method)
+vector<Eigen::Vector3i> holyFiller(Mesh* mesh, enum METHOD method)
 {
-	vector<int> filled;
 	vector<vector<int>> boundaryLoops;
 	boundaryLoopDetector(mesh->tris, boundaryLoops);
-
+	vector<Eigen::Vector3i> filled;
 	for (auto boundaryLoop : boundaryLoops)
 	{
 		holyFillerHelper(mesh, boundaryLoop, filled, method);
-		
 	}
 
 	return filled;

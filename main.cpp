@@ -21,10 +21,15 @@ int main()
 	std::string name = "bunny-1.obj";
 	mesh->loadObj(name.c_str());
 
-	vector<int> filled;
+	vector<Eigen::Vector3i> filled;
 	filled = holyFiller(mesh, ANGLE);
 	
-	root->addChild(painter->getShapeSep(mesh, filled));
+	SoSeparator* thickEdgeSep = new SoSeparator();
+
+	SoSeparator* sep = painter->getShapeSep(mesh, filled, thickEdgeSep);
+
+	root->addChild(sep);
+	root->addChild(thickEdgeSep);
 
 	viewer->setSize(SbVec2s(640, 480));
 	viewer->setSceneGraph(root);
