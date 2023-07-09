@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#define ALPHA 0.99
+#define ALPHA 0.55
 #define INFINITE_PREVENTER 20
 
 bool circumSphereCheck(Mesh* mesh, int v1_, int v2_, int v3_, int op_);
@@ -604,9 +604,6 @@ bool edgeCheck(Mesh* mesh, vector<Eigen::Vector3i>& triangles, unordered_map<edg
 		if (swapSet.count(neighbor))
 			return false;
 
-		if (i == 219 || neighbor == 219)
-			int k = 0;
-
 		for (int k = 0; k < 3; k++)
 		{
 			if (triangles[neighbor](k) != triangles[i](v1) && triangles[neighbor](k) != triangles[i](v2))
@@ -700,7 +697,64 @@ void refinement(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vecto
 	}
 }
 
-void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& filled, enum METHOD method)
+double weight(Eigen::Vector3d v1, Eigen::Vector3d v2, enum FMETHOD fmethod)
+{
+	switch (fmethod)
+	{
+		case UNIFORM:
+			return 1;
+		case SCALE:
+			return (v1 - v2).norm();
+	}
+	
+}
+
+void fairing(Mesh* mesh, vector<Eigen::Vector3i>& triangles, enum FMETHOD fmethod)
+{
+	unordered_set<int> verticesProcessed;
+
+	for (int i = 0; i < triangles.size(); i++)
+	{
+		for (int j = 0; j < 3; j++)
+		{
+			int v = triangles[i](j);
+
+			if (verticesProcessed.count(v) > 0)
+				continue;
+
+			Eigen::Vector3d vv;
+			vv << mesh->verts[v]->coords[0], mesh->verts[v]->coords[1], mesh->verts[v]->coords[2];
+
+			Eigen::Vector3d Uw = -vv;
+
+			double wv = 0;
+			Eigen::Vector3d sum_wv(0,0,0);
+
+			for (int k = 0; k < mesh->verts[v]->vertList.size(); k++)
+			{
+				Eigen::Vector3d vi;
+				vi << mesh->verts[mesh->verts[v]->vertList[k]]->coords[0], mesh->verts[mesh->verts[v]->vertList[k]]->coords[1], mesh->verts[mesh->verts[v]->vertList[k]]->coords[2];
+
+				double w = weight(vv, vi, fmethod);
+
+				wv += w;
+				sum_wv += vi * w;
+			}
+
+			Uw += sum_wv / wv;
+
+			vv += Uw;
+			mesh->verts[v]->coords[0] = vv(0);
+			mesh->verts[v]->coords[1] = vv(1);
+			mesh->verts[v]->coords[2] = vv(2);
+
+			verticesProcessed.insert(v);
+		}
+	}
+
+}
+
+void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& filled, enum METHOD method, enum FMETHOD fmethod)
 {
 	vector<Eigen::Vector3i> triangles;
 	vector<vector<double>> A;
@@ -799,19 +853,20 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen:
 	}
 
 	refinement(mesh, boundaryLoop, triangles, ls);
-		
 	insertTriangles(mesh, triangles);
+	fairing(mesh, triangles, fmethod);
+
 	filled.insert(filled.end(), triangles.begin(), triangles.end());
 }
 
-vector<Eigen::Vector3i> holyFiller(Mesh* mesh, enum METHOD method)
+vector<Eigen::Vector3i> holyFiller(Mesh* mesh, enum METHOD method, enum FMETHOD fmethod)
 {
 	vector<vector<int>> boundaryLoops;
 	boundaryLoopDetector(mesh->tris, boundaryLoops);
 	vector<Eigen::Vector3i> filled;
 	for (auto boundaryLoop : boundaryLoops)
 	{
-		holyFillerHelper(mesh, boundaryLoop, filled, method);
+		holyFillerHelper(mesh, boundaryLoop, filled, method, fmethod);
 	}
 
 	return filled;

@@ -71,7 +71,14 @@ enum METHOD
 	ANGLE
 };
 
-vector<Eigen::Vector3i> holyFiller(Mesh*, enum METHOD method);
+enum FMETHOD
+{
+	UNIFORM,
+	SCALE,
+	HARMONIC
+};
+
+vector<Eigen::Vector3i> holyFiller(Mesh*, enum METHOD method, enum FMETHOD fmethod);
 void boundaryLoopDetector(const std::vector<Triangle*>& tris, vector<vector<int>>& boundaryLoops);
-void holyFillerHelper(Mesh*, const vector<int>& boundaryLoop, vector<int>& filled, enum METHOD method);
+void holyFillerHelper(Mesh*, const vector<int>& boundaryLoop, vector<int>& filled, enum METHOD method, enum FMETHOD fmethod);
 
