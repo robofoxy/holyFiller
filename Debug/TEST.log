@@ -34,10 +34,11 @@ C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(398,79): warning C4244: 'argument
           [
               _Ty=float
           ]
-C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(411,20): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(495,9): warning C4018: '>=': signed/unsigned mismatch
-C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(520,21): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(522,22): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(558,21): warning C4018: '<': signed/unsigned mismatch
-C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(560,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(526,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(540,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(556,9): warning C4018: '>=': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(581,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(583,22): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(619,21): warning C4018: '<': signed/unsigned mismatch
+C:\Users\rasit\Desktop\holyFiller\holeFill.cpp(621,22): warning C4018: '<': signed/unsigned mismatch
   TEST.vcxproj -> C:\Users\rasit\Desktop\holyFiller\Debug\TEST.exe

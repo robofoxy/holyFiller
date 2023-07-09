@@ -403,82 +403,143 @@ void divideTriangles(Mesh* mesh, vector<Eigen::Vector3i>& triangles, const vecto
 	}
 }
 
-// REFACTORING NEEDED
+
+bool circumSphereCheck(Mesh* mesh, Eigen::Vector3i triangle, int opposite)
+{
+	Eigen::Vector3d v1;
+	v1 << mesh->verts[triangle(0)]->coords[0], mesh->verts[triangle(0)]->coords[1], mesh->verts[triangle(0)]->coords[2];
+	Eigen::Vector3d v2;
+	v2 << mesh->verts[triangle(1)]->coords[0], mesh->verts[triangle(1)]->coords[1], mesh->verts[triangle(1)]->coords[2];
+	Eigen::Vector3d v3;
+	v3 << mesh->verts[triangle(2)]->coords[0], mesh->verts[triangle(2)]->coords[1], mesh->verts[triangle(2)]->coords[2];
+	Eigen::Vector3d op;
+	op << mesh->verts[opposite]->coords[0], mesh->verts[opposite]->coords[1], mesh->verts[opposite]->coords[2];
+
+	Eigen::Matrix<double, 2, 3> projection; // 3D to 2D projection
+	Eigen::Vector3d v10 = (v2 - v1).normalized();
+	Eigen::Vector3d v = v3 - v1;
+	Eigen::Vector3d n = v.cross(v10);
+	Eigen::Vector3d v20 = v10.cross(n).normalized();
+
+	projection.row(0) = v10;
+	projection.row(1) = v20;
+
+	Eigen::Vector2d A;
+	A.fill(0);
+
+	Eigen::Matrix<double, 2, 1> B = projection * (v2 - v1);
+	Eigen::Matrix<double, 2, 1> C = projection * (v3 - v1);
+	Eigen::Matrix<double, 2, 1> v11 = projection * (op - v1);
+
+	Eigen::Matrix4d M;
+	M(0, 0) = v11.squaredNorm();
+	M(1, 0) = A.squaredNorm();
+	M(2, 0) = B.col(0).squaredNorm();
+	M(3, 0) = C.col(0).squaredNorm();
+
+	M(0, 1) = v11(0);
+	M(1, 1) = A(0);
+	M(2, 1) = B(0);
+	M(3, 1) = C(0);
+
+	M(0, 2) = v11(1);
+	M(1, 2) = A(1);
+	M(2, 2) = B(1);
+	M(3, 2) = C(1);
+
+	M(0, 3) = 1;
+	M(1, 3) = 1;
+	M(2, 3) = 1;
+	M(3, 3) = 1;
+
+	if (M.determinant() > 0)
+		return false;
+	else
+		return true;
+}
+
+void swap(vector<Eigen::Vector3i>& triangles, int tr1, int op1, int tr2, int op2, int iv1, int iv2)
+{
+	triangles[tr1] << iv1, op2, op1;
+	triangles[tr2] << iv2, op1, op2;
+}
+
+struct swapS
+{
+	int tr1;
+	int op1;
+	int tr2;
+	int op2;
+	int iv1;
+	int iv2;
+};
+
+bool edgeCheck(Mesh* mesh, vector<Eigen::Vector3i>& triangles, unordered_map<edge, int>& edgesToTriangles, int v1, int v2, int v3, int i, unordered_set<int>& swapSet, vector<swapS>& toBeSwapped)
+{
+	int a, b;
+
+	if ((a = edgesToTriangles.count({ triangles[i](v1),  triangles[i](v2) })) == 0 && (b = edgesToTriangles.count({ triangles[i](v2),  triangles[i](v1) })) == 0)
+	{
+		edgesToTriangles[{ triangles[i](v1), triangles[i](v2) }] = i;
+	}
+	else
+	{
+		int neighbor, opposite  = -1;
+
+		neighbor = (a > 0) ? edgesToTriangles[{ triangles[i](v1), triangles[i](v2) }] : edgesToTriangles[{ triangles[i](v2), triangles[i](v1) }];
+
+		if (swapSet.count(neighbor))
+			return false;
+
+		for (int k = 0; k < 3; k++)
+		{
+			if (triangles[neighbor](k) != triangles[i](v1) && triangles[neighbor](k) != triangles[i](v2))
+			{
+				opposite = triangles[neighbor](k);
+				break;
+			}
+		}
+		
+		if (opposite == -1)
+		{
+			int kkk = 2;
+		}
+		
+		if (circumSphereCheck(mesh, triangles[i], opposite) || circumSphereCheck(mesh, triangles[neighbor], triangles[i](v3)))
+		{
+			swapSet.insert(i);
+			swapSet.insert(neighbor);
+			toBeSwapped.push_back({ i, triangles[i](v3), neighbor, opposite, triangles[i](v1), triangles[i](v2) });
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void relax(Mesh* mesh, vector<Eigen::Vector3i>& triangles)
 {
 	unordered_map<edge, int> edgesToTriangles;
+	unordered_set<int> swapSet;
+	vector<swapS> toBeSwapped;
 
 	for (int i = 0; i < triangles.size(); i++)
 	{
+		if (swapSet.count(i))
+			continue;
+
 		edge e1{ triangles[i](0),  triangles[i](1) };
 		edge e2{ triangles[i](1),  triangles[i](2) };
 		edge e3{ triangles[i](2),  triangles[i](0) };
-		int a, b;
+		
+		if (edgeCheck(mesh, triangles, edgesToTriangles, 0, 1, 2, i, swapSet, toBeSwapped)) continue;
+		if (edgeCheck(mesh, triangles, edgesToTriangles, 1, 2, 0, i, swapSet, toBeSwapped)) continue;
+		if (edgeCheck(mesh, triangles, edgesToTriangles, 2, 0, 1, i, swapSet, toBeSwapped)) continue;
+	}
 
-		// REFACTORING NEEDED
-		if ((a = edgesToTriangles.count({ triangles[i](0),  triangles[i](1) })) == 0 && (b = edgesToTriangles.count({ triangles[i](1),  triangles[i](0) })) == 0)
-		{
-			edgesToTriangles[{ triangles[i](0), triangles[i](1) }] = i;
-		}
-		else
-		{
-			// REFACTORING NEEDED
-			int neighbor;
-			if (a > 0)
-			{
-				neighbor = edgesToTriangles[{ triangles[i](0), triangles[i](1) }];
-			}
-			else
-			{
-				neighbor = edgesToTriangles[{ triangles[i](1), triangles[i](0) }];
-			}
-			// REFACTORING NEEDED
-			;
-		}
-
-		// REFACTORING NEEDED
-		if ((a = edgesToTriangles.count({ triangles[i](1),  triangles[i](2) })) == 0 && (b = edgesToTriangles.count({ triangles[i](2),  triangles[i](1) })) == 0)
-		{
-			edgesToTriangles[{ triangles[i](1), triangles[i](2) }] = i;
-		}
-		else
-		{
-			// REFACTORING NEEDED
-			int neighbor;
-			if (a > 0)
-			{
-				neighbor = edgesToTriangles[{ triangles[i](1), triangles[i](2) }];
-			}
-			else
-			{
-				neighbor = edgesToTriangles[{ triangles[i](2), triangles[i](1) }];
-			}
-			// REFACTORING NEEDED
-			;
-		}
-
-		// REFACTORING NEEDED
-		if ((a = edgesToTriangles.count({ triangles[i](2),  triangles[i](0) })) == 0 && (b = edgesToTriangles.count({ triangles[i](0),  triangles[i](2) })) == 0)
-		{
-			edgesToTriangles[{ triangles[i](2), triangles[i](0) }] = i;
-		}
-		else
-		{
-			// REFACTORING NEEDED
-			int neighbor;
-			if (a > 0)
-			{
-				neighbor = edgesToTriangles[{ triangles[i](2), triangles[i](0) }];
-			}
-			else
-			{
-				neighbor = edgesToTriangles[{ triangles[i](0), triangles[i](2) }];
-			}
-			// REFACTORING NEEDED
-			;
-		}
-
-
+	for (int i = 0; i < toBeSwapped.size(); i++)
+	{
+		swap(triangles, toBeSwapped[i].tr1, toBeSwapped[i].op1, toBeSwapped[i].tr2, toBeSwapped[i].op2, toBeSwapped[i].iv1, toBeSwapped[i].iv2);
 	}
 }
 
@@ -589,19 +650,16 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen:
 	vector<float> centroidSigmas;
 	fetchCentroidSigmas(mesh, triangles, centroidSigmas, sigmas);
 
+	// REFACTORING NEEDED
 	int k = 0;
-	while (k < 3)
+	while (k < 1)
 	{
 		vector<int> trianglesToBeDivided;
 		identifyDividedTriangles(mesh, triangles, centroids, sigmas, centroidSigmas, trianglesToBeDivided);
 		if (trianglesToBeDivided.empty()) break;
 		divideTriangles(mesh, triangles, trianglesToBeDivided, centroids, sigmas, centroidSigmas);
 
-		/*RELAXATION*/
-
 		relax(mesh, triangles);
-
-		/*RELAXATION*/
 		k++;
 	}
 
