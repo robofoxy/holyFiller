@@ -45,7 +45,7 @@ SoSeparator* Painter::getShapeSep(Mesh* mesh, const vector<Eigen::Vector3i>& fil
 		ma->diffuseColor.setValue(0.7, 0.7, 0.7);
 
 		thickEdgeSep->addChild(ma);
-		SoDrawStyle* sty = new SoDrawStyle;	sty->lineWidth = 2.0f;	thickEdgeSep->addChild(sty);
+		SoDrawStyle* sty = new SoDrawStyle;	sty->lineWidth = 5.0f;	thickEdgeSep->addChild(sty);
 
 		//shape
 		SoIndexedLineSet* ils = new SoIndexedLineSet;
