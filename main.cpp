@@ -22,7 +22,7 @@ int main()
 	mesh->loadObj(name.c_str());
 
 	vector<Eigen::Vector3i> filled;
-	filled = holyFiller(mesh, ANGLE, UNIFORM);
+	filled = holyFiller(mesh, ANGLE, REFINE, SCALE_WHOLE, 1);
 	
 	SoSeparator* thickEdgeSep = new SoSeparator();
 

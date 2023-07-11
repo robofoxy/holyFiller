@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#define ALPHA 0.55
+#define ALPHA sqrt(2)
 #define INFINITE_PREVENTER 20
 
 bool circumSphereCheck(Mesh* mesh, int v1_, int v2_, int v3_, int op_);
@@ -661,13 +661,17 @@ void relax(Mesh* mesh, vector<Eigen::Vector3i>& triangles, int& numOfSwap, int& 
 	numOfSwap = toBeSwapped.size();
 }
 
-void refinement(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& triangles, const vector<vector<int>>& ls)
+void refinement(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& triangles, const vector<vector<int>>& ls, enum RMETHOD rmethod)
 {
+	vector<Eigen::Vector3d> centroids;
+	triangles = trianglesToBeInserted(mesh, boundaryLoop, ls, centroids);
+
+	if (rmethod == NO_REFINEMENT)
+		return;
+
 	unordered_map<int, float> sigmas;
 	calculateSigmas(mesh, boundaryLoop, sigmas);
 
-	vector<Eigen::Vector3d> centroids;
-	triangles = trianglesToBeInserted(mesh, boundaryLoop, ls, centroids);
 	vector<float> centroidSigmas;
 	fetchCentroidSigmas(mesh, triangles, centroidSigmas, sigmas);
 
@@ -709,8 +713,101 @@ double weight(Eigen::Vector3d v1, Eigen::Vector3d v2, enum FMETHOD fmethod)
 	
 }
 
-void fairing(Mesh* mesh, vector<Eigen::Vector3i>& triangles, enum FMETHOD fmethod)
+double weightHarmonic(Mesh* mesh, int v1, int v2)
 {
+	vector<int> tris;
+
+	for (int i = 0; i < mesh->tris.size(); i++)
+	{
+		unordered_set<int> verts;
+
+		verts.insert(mesh->tris[i]->v1i);
+		verts.insert(mesh->tris[i]->v2i);
+		verts.insert(mesh->tris[i]->v3i);
+
+		if (verts.count(v1) > 0 && verts.count(v2) > 0)
+			tris.push_back(i);
+	}
+
+	if (tris.size() != 2)
+		return 1;
+
+	Eigen::Vector3i tri1, tri2;
+	tri1 << mesh->tris[tris[0]]->v1i, mesh->tris[tris[0]]->v2i, mesh->tris[tris[0]]->v3i;
+	tri2 << mesh->tris[tris[1]]->v1i, mesh->tris[tris[1]]->v2i, mesh->tris[tris[1]]->v3i;
+
+	int op1, op2;
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (tri1(i) != v1 && tri1(i) != v2)
+			op1 = tri1(i);
+		if (tri2(i) != v1 && tri2(i) != v2)
+			op2 = tri2(i);
+	}
+
+	Eigen::Vector3d v11, v22, op11, op22;
+	v11 << mesh->verts[v1]->coords[0], mesh->verts[v1]->coords[1], mesh->verts[v1]->coords[2];
+	v22 << mesh->verts[v2]->coords[0], mesh->verts[v2]->coords[1], mesh->verts[v2]->coords[2];
+	op11 << mesh->verts[op1]->coords[0], mesh->verts[op1]->coords[1], mesh->verts[op1]->coords[2];
+	op22 << mesh->verts[op2]->coords[0], mesh->verts[op2]->coords[1], mesh->verts[op2]->coords[2];
+
+	double w1 = 1/tan(acos((v11 - op11).dot((v22 - op11)) / ((v11 - op11).norm() * (v22 - op11).norm())));
+	double w2 = 1 / tan(acos((v11 - op22).dot((v22 - op22)) / ((v11 - op22).norm() * (v22 - op22).norm())));
+
+	return w1 + w2;
+}
+
+void fairUniformWhole(Mesh* mesh, enum FMETHOD fmethod)
+{
+	for (int v = 0; v < mesh->verts.size(); v++)
+	{
+		Eigen::Vector3d vv;
+		vv << mesh->verts[v]->coords[0], mesh->verts[v]->coords[1], mesh->verts[v]->coords[2];
+
+		Eigen::Vector3d Uw = -vv;
+
+		double wv = 0;
+		Eigen::Vector3d sum_wv(0, 0, 0);
+
+		for (int k = 0; k < mesh->verts[v]->vertList.size(); k++)
+		{
+			Eigen::Vector3d vi;
+			vi << mesh->verts[mesh->verts[v]->vertList[k]]->coords[0], mesh->verts[mesh->verts[v]->vertList[k]]->coords[1], mesh->verts[mesh->verts[v]->vertList[k]]->coords[2];
+
+			double w = weight(vv, vi, (fmethod == UNIFORM_WHOLE) ? UNIFORM : SCALE);
+
+			wv += w;
+			sum_wv += vi * w;
+		}
+
+		Uw += sum_wv / wv;
+
+		vv += Uw;
+		mesh->verts[v]->coords[0] = vv(0);
+		mesh->verts[v]->coords[1] = vv(1);
+		mesh->verts[v]->coords[2] = vv(2);
+	}
+
+}
+
+
+void fairing(Mesh* mesh, const vector<Eigen::Vector3i>& triangles, enum FMETHOD fmethod)
+{
+	switch (fmethod)
+	{
+	case NO_FAIR:
+		return;
+	case UNIFORM_WHOLE:
+		fairUniformWhole(mesh, UNIFORM_WHOLE);
+		return;
+	case SCALE_WHOLE:
+		fairUniformWhole(mesh, SCALE_WHOLE);
+		return;
+	default:
+		break;
+	}
+
 	unordered_set<int> verticesProcessed;
 
 	for (int i = 0; i < triangles.size(); i++)
@@ -735,7 +832,16 @@ void fairing(Mesh* mesh, vector<Eigen::Vector3i>& triangles, enum FMETHOD fmetho
 				Eigen::Vector3d vi;
 				vi << mesh->verts[mesh->verts[v]->vertList[k]]->coords[0], mesh->verts[mesh->verts[v]->vertList[k]]->coords[1], mesh->verts[mesh->verts[v]->vertList[k]]->coords[2];
 
-				double w = weight(vv, vi, fmethod);
+				double w;
+
+				if (fmethod != HARMONIC)
+				{
+					w = weight(vv, vi, fmethod);
+				}
+				else
+				{
+					w = weightHarmonic(mesh, v, mesh->verts[v]->vertList[k]);
+				}
 
 				wv += w;
 				sum_wv += vi * w;
@@ -747,14 +853,14 @@ void fairing(Mesh* mesh, vector<Eigen::Vector3i>& triangles, enum FMETHOD fmetho
 			mesh->verts[v]->coords[0] = vv(0);
 			mesh->verts[v]->coords[1] = vv(1);
 			mesh->verts[v]->coords[2] = vv(2);
-
+			
 			verticesProcessed.insert(v);
 		}
 	}
 
 }
 
-void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& filled, enum METHOD method, enum FMETHOD fmethod)
+void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen::Vector3i>& filled, enum METHOD method, enum RMETHOD rmethod, enum FMETHOD fmethod, int numFairIt)
 {
 	vector<Eigen::Vector3i> triangles;
 	vector<vector<double>> A;
@@ -852,21 +958,24 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen:
 		}
 	}
 
-	refinement(mesh, boundaryLoop, triangles, ls);
+	refinement(mesh, boundaryLoop, triangles, ls, rmethod);
+	
 	insertTriangles(mesh, triangles);
-	fairing(mesh, triangles, fmethod);
+	
+	for(int k = 0; k < numFairIt; k++) 
+		fairing(mesh, triangles, fmethod);
 
 	filled.insert(filled.end(), triangles.begin(), triangles.end());
 }
 
-vector<Eigen::Vector3i> holyFiller(Mesh* mesh, enum METHOD method, enum FMETHOD fmethod)
+vector<Eigen::Vector3i> holyFiller(Mesh* mesh, enum METHOD method, enum RMETHOD rmethod, enum FMETHOD fmethod, int numFairIt)
 {
 	vector<vector<int>> boundaryLoops;
 	boundaryLoopDetector(mesh->tris, boundaryLoops);
 	vector<Eigen::Vector3i> filled;
 	for (auto boundaryLoop : boundaryLoops)
 	{
-		holyFillerHelper(mesh, boundaryLoop, filled, method, fmethod);
+		holyFillerHelper(mesh, boundaryLoop, filled, method, rmethod, fmethod, numFairIt);
 	}
 
 	return filled;
