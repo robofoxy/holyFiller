@@ -11,7 +11,7 @@ SoSeparator* Painter::getShapeSep(Mesh* mesh, const vector<Eigen::Vector3i>& fil
 	//color
 	SoMaterial* mat = new SoMaterial();
 	mat->diffuseColor.setValue(0.7, 0.7, 0.7); //paint all vertices with this color
-	//mat->transparency = 0.5f : 0.0f; //0 makes it completely opaque, the default
+	mat->transparency = 0; //0 makes it completely opaque, the default
 
 	bool youWantToPaintEachVertexDifferently = true;
 
@@ -23,9 +23,9 @@ SoSeparator* Painter::getShapeSep(Mesh* mesh, const vector<Eigen::Vector3i>& fil
 
 	for (int i = 0; i < filled.size(); i++) //i = 0 obj->color above overwritten here
 	{
-		mat->diffuseColor.set1Value(filled[i](0), 1, 0, 0); //vert color according to its x-y-z coord (for mesh1) and to the transferred color (for mesh2)
-		mat->diffuseColor.set1Value(filled[i](1), 1, 0, 0); //vert color according to its x-y-z coord (for mesh1) and to the transferred color (for mesh2)
-		mat->diffuseColor.set1Value(filled[i](2), 1, 0, 0); //vert color according to its x-y-z coord (for mesh1) and to the transferred color (for mesh2)
+		mat->diffuseColor.set1Value(filled[i](0), 0.1, 0.1, 0.1); //vert color according to its x-y-z coord (for mesh1) and to the transferred color (for mesh2)
+		mat->diffuseColor.set1Value(filled[i](1), 0.1, 0.1, 0.1); //vert color according to its x-y-z coord (for mesh1) and to the transferred color (for mesh2)
+		mat->diffuseColor.set1Value(filled[i](2), 0.1, 0.1, 0.1); //vert color according to its x-y-z coord (for mesh1) and to the transferred color (for mesh2)
 	}
 
 	res->addChild(mat);
@@ -45,7 +45,7 @@ SoSeparator* Painter::getShapeSep(Mesh* mesh, const vector<Eigen::Vector3i>& fil
 		ma->diffuseColor.setValue(0.7, 0.7, 0.7);
 
 		thickEdgeSep->addChild(ma);
-		SoDrawStyle* sty = new SoDrawStyle;	sty->lineWidth = 5.0f;	thickEdgeSep->addChild(sty);
+		SoDrawStyle* sty = new SoDrawStyle;	sty->lineWidth = 2.0f;	thickEdgeSep->addChild(sty);
 
 		//shape
 		SoIndexedLineSet* ils = new SoIndexedLineSet;

@@ -1,7 +1,6 @@
 #include "Mesh.h"
 
-#define ALPHA sqrt(2)
-#define INFINITE_PREVENTER 20
+
 
 bool circumSphereCheck(Mesh* mesh, int v1_, int v2_, int v3_, int op_);
 bool swapCheck(const vector<Eigen::Vector3i>& triangles, int iv1, int iv2, int op2, int op1);
@@ -957,7 +956,7 @@ void holyFillerHelper(Mesh* mesh, const vector<int>& boundaryLoop, vector<Eigen:
 			}
 		}
 	}
-
+	
 	refinement(mesh, boundaryLoop, triangles, ls, rmethod);
 	
 	insertTriangles(mesh, triangles);

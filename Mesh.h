@@ -12,6 +12,8 @@
 
 using namespace std;
 
+#define ALPHA sqrt(2)
+
 struct Vertex
 {
 	float* coords, * normals; //3d coordinates etc
@@ -91,3 +93,4 @@ vector<Eigen::Vector3i> holyFiller(Mesh*, enum METHOD method, enum RMETHOD rmeth
 void boundaryLoopDetector(const std::vector<Triangle*>& tris, vector<vector<int>>& boundaryLoops);
 void holyFillerHelper(Mesh*, const vector<int>& boundaryLoop, vector<int>& filled, enum METHOD method, enum RMETHOD rmethod, enum FMETHOD fmethod, int numFairIt);
 
+#define INFINITE_PREVENTER 20
